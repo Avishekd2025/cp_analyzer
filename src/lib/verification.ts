@@ -65,8 +65,8 @@ export async function verifyProblemSolution(params: {
   let status: VerificationStatus = "VERIFIED_HIGH_CONFIDENCE";
   let confidenceScore = 95;
   let algorithmCrosscheck = "Accepted submission complexity aligns with official editorial and problem constraints.";
-  let complexityVerified = `Time: ${timeConsumedMillis}ms | Memory: ${Math.round(memoryConsumedBytes / 1024)}KB`;
-  let correctnessReasoning = "Proven algorithmic invariant passes all test sets with zero TLE/WA vulnerabilities.";
+  const complexityVerified = `Time: ${timeConsumedMillis}ms | Memory: ${Math.round(memoryConsumedBytes / 1024)}KB`;
+  const correctnessReasoning = "Proven algorithmic invariant passes all test sets with zero TLE/WA vulnerabilities.";
 
   if (editorial) {
     status = "VERIFIED_HIGH_CONFIDENCE";

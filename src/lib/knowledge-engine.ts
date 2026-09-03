@@ -309,7 +309,7 @@ export async function ensureCanonicalPatternsExist() {
 
   for (const t of CANONICAL_TECHNIQUES) {
     if (!existingTechIds.has(t.id)) {
-      await db.insert(techniques).values(t);
+      await db.insert(techniques).values(t).onConflictDoNothing();
     }
   }
 
@@ -318,24 +318,27 @@ export async function ensureCanonicalPatternsExist() {
 
   for (const p of CANONICAL_PATTERNS) {
     if (!existingPatternIds.has(p.id)) {
-      await db.insert(patterns).values({
-        id: p.id,
-        techniqueId: p.techniqueId,
-        name: p.name,
-        slug: p.slug,
-        coreIdea: p.coreIdea,
-        mentalModel: p.mentalModel,
-        realLifeAnalogy: p.realLifeAnalogy,
-        discoveryFlow: p.discoveryFlow,
-        recognitionSignals: JSON.stringify(p.recognitionSignals),
-        standardApproach: p.standardApproach,
-        whyItWorksProof: p.whyItWorksProof,
-        whyNotOthers: p.whyNotOthers,
-        commonMistakes: JSON.stringify(p.commonMistakes),
-        implementationInsights: p.implementationInsights,
-        rarityTier: p.rarityTier,
-        usedCount: 0,
-      });
+      await db
+        .insert(patterns)
+        .values({
+          id: p.id,
+          techniqueId: p.techniqueId,
+          name: p.name,
+          slug: p.slug,
+          coreIdea: p.coreIdea,
+          mentalModel: p.mentalModel,
+          realLifeAnalogy: p.realLifeAnalogy,
+          discoveryFlow: p.discoveryFlow,
+          recognitionSignals: JSON.stringify(p.recognitionSignals),
+          standardApproach: p.standardApproach,
+          whyItWorksProof: p.whyItWorksProof,
+          whyNotOthers: p.whyNotOthers,
+          commonMistakes: JSON.stringify(p.commonMistakes),
+          implementationInsights: p.implementationInsights,
+          rarityTier: p.rarityTier,
+          usedCount: 0,
+        })
+        .onConflictDoNothing();
     }
   }
 }

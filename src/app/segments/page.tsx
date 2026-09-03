@@ -1,15 +1,16 @@
-import Link from "next/link";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { desc } from "drizzle-orm";
 import { getSegmentAnalytics } from "@/lib/segmentation";
+import { getActiveHandle } from "@/lib/user-session";
 import { BookOpen, Sparkles, TrendingUp, CheckCircle2, ArrowRight, Layers, Lightbulb } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function SegmentsPage() {
-  const activeUser = (await db.select().from(users).orderBy(desc(users.lastSyncedAt)).limit(1))[0];
-  const userHandle = activeUser?.codeforcesHandle || "X_illUmiNatI";
+interface SegmentsPageProps {
+  searchParams?: Promise<{ handle?: string }>;
+}
+
+export default async function SegmentsPage({ searchParams }: SegmentsPageProps) {
+  const params = await searchParams;
+  const userHandle = await getActiveHandle(params?.handle);
   const segments = await getSegmentAnalytics(userHandle);
 
   return (

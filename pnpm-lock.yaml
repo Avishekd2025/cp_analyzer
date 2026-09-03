@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      better-sqlite3:
-        specifier: ^13.0.3
-        version: 13.0.3
       canvas-confetti:
         specifier: ^1.9.4
         version: 1.9.4
@@ -60,6 +57,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: 1.0.0
         version: 1.0.0
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10

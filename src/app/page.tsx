@@ -18,15 +18,20 @@ import { db } from "@/db";
 import { seedDatabaseIfEmpty } from "@/lib/seed-data";
 import { users, userSolvedProblems, patterns, techniques, segments, problems } from "@/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
+import { getActiveUser } from "@/lib/user-session";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams?: Promise<{ handle?: string }>;
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const params = await searchParams;
   await seedDatabaseIfEmpty();
 
-  // Get active user
-  const activeUser = (await db.select().from(users).orderBy(desc(users.lastSyncedAt)).limit(1))[0];
-  const userHandle = activeUser?.codeforcesHandle || "X_illumiNati";
+  // Get active user safely scoped to session handle
+  const { handle: userHandle, user: activeUser } = await getActiveUser(params?.handle);
 
   // Total unique solved count from database
   const solvedCountRes = await db

@@ -4,10 +4,12 @@ import { users, userSolvedProblems, patterns } from "@/db/schema";
 import { eq, desc, sql, and, like } from "drizzle-orm";
 import { Award, CheckCircle2, ArrowRight, ExternalLink, Clock, ChevronLeft, ChevronRight, Search } from "lucide-react";
 
+import { getActiveHandle } from "@/lib/user-session";
+
 export const dynamic = "force-dynamic";
 
 interface ProblemsPageProps {
-  searchParams: Promise<{ page?: string; q?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; handle?: string }>;
 }
 
 export default async function ProblemsPage({ searchParams }: ProblemsPageProps) {
@@ -17,9 +19,8 @@ export default async function ProblemsPage({ searchParams }: ProblemsPageProps) 
   const pageSize = 40;
   const offset = (page - 1) * pageSize;
 
-  // Active user
-  const activeUser = (await db.select().from(users).orderBy(desc(users.lastSyncedAt)).limit(1))[0];
-  const userHandle = activeUser?.codeforcesHandle || "X_illumiNati";
+  // Active user safely resolved from session
+  const userHandle = await getActiveHandle(params.handle);
 
   // Total count for active user
   const countRes = await db
@@ -29,7 +30,7 @@ export default async function ProblemsPage({ searchParams }: ProblemsPageProps) 
   const totalCount = countRes[0]?.count || 0;
 
   // Query paginated problems
-  let whereClause = eq(userSolvedProblems.userHandle, userHandle);
+  const whereClause = eq(userSolvedProblems.userHandle, userHandle);
 
   const problemList = await db
     .select({

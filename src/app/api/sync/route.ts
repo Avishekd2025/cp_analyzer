@@ -188,29 +188,17 @@ export async function POST(req: NextRequest) {
     const totalAnalyzedCount = totalAnalyzedRes[0]?.count || 0;
     const pendingAnalysisCount = Math.max(0, currentSolvedCount - totalAnalyzedCount);
 
-    // 10. Update or create user record
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.codeforcesHandle, normalizedHandle),
-    });
-
+    // 10. Update or create user record atomically with PostgreSQL upsert
     const nowIso = new Date().toISOString();
+    const displayName = userInfo
+      ? `${userInfo.firstName || ""} ${userInfo.lastName || ""}`.trim() || normalizedHandle
+      : normalizedHandle;
 
-    if (existingUser) {
-      await db
-        .update(users)
-        .set({
-          rating: userInfo?.rating || existingUser.rating,
-          maxRating: userInfo?.maxRating || existingUser.maxRating,
-          rank: userInfo?.rank || existingUser.rank,
-          totalSolved: currentSolvedCount,
-          totalAnalyzed: totalAnalyzedCount,
-          lastSyncedAt: nowIso,
-        })
-        .where(eq(users.id, existingUser.id));
-    } else {
-      await db.insert(users).values({
+    await db
+      .insert(users)
+      .values({
         id: `user_${normalizedHandle.toLowerCase()}`,
-        name: userInfo ? `${userInfo.firstName || ""} ${userInfo.lastName || ""}`.trim() || normalizedHandle : normalizedHandle,
+        name: displayName,
         codeforcesHandle: normalizedHandle,
         rating: userInfo?.rating || 0,
         maxRating: userInfo?.maxRating || 0,
@@ -218,10 +206,21 @@ export async function POST(req: NextRequest) {
         totalSolved: currentSolvedCount,
         totalAnalyzed: totalAnalyzedCount,
         lastSyncedAt: nowIso,
+      })
+      .onConflictDoUpdate({
+        target: users.codeforcesHandle,
+        set: {
+          name: displayName,
+          rating: userInfo?.rating || 0,
+          maxRating: userInfo?.maxRating || 0,
+          rank: userInfo?.rank || "unrated",
+          totalSolved: currentSolvedCount,
+          totalAnalyzed: totalAnalyzedCount,
+          lastSyncedAt: nowIso,
+        },
       });
-    }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       handle: normalizedHandle,
       userInfo: userInfo || { handle: normalizedHandle, rating: 0, rank: "unrated" },
@@ -233,6 +232,16 @@ export async function POST(req: NextRequest) {
       patternsUpdated: patternsUpdatedSet.size,
       syncedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
+
+    // Set cookie so current browser session binds to the synced handle
+    response.cookies.set("cf_handle", normalizedHandle, {
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+
+    return response;
   } catch (error) {
     console.error("Sync API error:", error);
     return NextResponse.json(

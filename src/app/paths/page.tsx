@@ -4,6 +4,8 @@ import { users, userSolvedProblems, techniques, patterns } from "@/db/schema";
 import { GitFork, ArrowRight, Award, AlertCircle, Layers, CheckCircle2, Clock } from "lucide-react";
 import { eq, and, desc } from "drizzle-orm";
 
+import { getActiveHandle } from "@/lib/user-session";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -11,10 +13,14 @@ export const metadata = {
   description: "Curated progression levels built directly from your solved Codeforces problems.",
 };
 
-export default async function PathsPage() {
-  // 1. Get primary active user
-  const activeUser = (await db.select().from(users).orderBy(desc(users.lastSyncedAt)).limit(1))[0];
-  const userHandle = activeUser?.codeforcesHandle || "X_illumiNati";
+interface PathsPageProps {
+  searchParams?: Promise<{ handle?: string }>;
+}
+
+export default async function PathsPage({ searchParams }: PathsPageProps) {
+  const params = await searchParams;
+  // 1. Get active user from session
+  const userHandle = await getActiveHandle(params?.handle);
 
   // 2. Query user's solved problems
   const userProblems = await db

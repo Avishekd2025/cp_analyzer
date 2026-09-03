@@ -24,10 +24,21 @@ interface SyncStatusData {
 }
 
 export default function SyncPage() {
-  const [handle, setHandle] = useState<string>("X_illumiNati");
+  const [handle, setHandle] = useState<string>("X_illUmiNatI");
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncResult, setSyncResult] = useState<SyncStatusData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/user")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.handle && data.handle !== "Not Connected") {
+          setHandle(data.handle);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSync = async () => {
     setIsSyncing(true);
