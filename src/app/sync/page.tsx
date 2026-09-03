@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
   ExternalLink,
-  Brain,
-  Layers,
-  Sparkles,
-  Award,
+  ArrowRight,
   Clock,
+  Sparkles,
 } from "lucide-react";
 
 interface SyncStatusData {
@@ -23,31 +23,27 @@ interface SyncStatusData {
   patternsUpdated: number;
 }
 
-export default function SyncPage() {
-  const [handle, setHandle] = useState<string>("X_illUmiNatI");
+function SyncPageContent() {
+  const searchParams = useSearchParams();
+  const queryHandle = searchParams.get("handle");
+  const autoSync = searchParams.get("auto") === "1";
+
+  const [handle, setHandle] = useState<string>(queryHandle || "X_illUmiNatI");
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncResult, setSyncResult] = useState<SyncStatusData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch("/api/user")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.handle && data.handle !== "Not Connected") {
-          setHandle(data.handle);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const handleSync = useCallback(async (targetHandle?: string) => {
+    const handleToSync = (targetHandle || handle).trim();
+    if (!handleToSync) return;
 
-  const handleSync = async () => {
     setIsSyncing(true);
     setErrorMsg(null);
     try {
       const res = await fetch("/api/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ handle }),
+        body: JSON.stringify({ handle: handleToSync }),
       });
       const data = await res.json();
       if (data.success) {
@@ -63,12 +59,30 @@ export default function SyncPage() {
       } else {
         setErrorMsg(data.error || "Sync encountered an error.");
       }
-    } catch (e) {
+    } catch {
       setErrorMsg("Failed to connect to sync pipeline.");
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [handle]);
+
+  useEffect(() => {
+    if (queryHandle) {
+      setHandle(queryHandle);
+      if (autoSync) {
+        handleSync(queryHandle);
+      }
+    } else {
+      fetch("/api/user")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.handle && data.handle !== "Not Connected") {
+            setHandle(data.handle);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [queryHandle, autoSync, handleSync]);
 
   return (
     <div className="space-y-10 max-w-5xl mx-auto pb-16">
@@ -81,7 +95,7 @@ export default function SyncPage() {
           Codeforces Continuous Synchronizer
         </h1>
         <p className="text-sm text-zinc-500 mt-1 max-w-3xl">
-          Permanently connects to your Codeforces handle. During synchronization, the engine retrieves all accepted submissions, extracts exact unique problems (contestId + index), and analyzes newly discovered problems without redundant reprocessing.
+          Permanently connects to any Codeforces handle. During synchronization, the engine retrieves all accepted submissions, extracts exact unique problems (contestId + index), and analyzes newly discovered problems without redundant reprocessing.
         </p>
       </div>
 
@@ -94,14 +108,16 @@ export default function SyncPage() {
               Enter any valid Codeforces handle below to calculate exact unique solved problems.
             </p>
           </div>
-          <a
-            href={`https://codeforces.com/profile/${handle}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800"
-          >
-            Codeforces Profile <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          {handle && (
+            <a
+              href={`https://codeforces.com/profile/${handle}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800"
+            >
+              Codeforces Profile <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
@@ -113,14 +129,17 @@ export default function SyncPage() {
               type="text"
               value={handle}
               onChange={(e) => setHandle(e.target.value)}
-              placeholder="e.g. X_illumiNati, tourist, Benq"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSync();
+              }}
+              placeholder="e.g. tourist, Benq, Toufik, X_illUmiNatI"
               className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>
 
           <div className="pt-5 sm:pt-6">
             <button
-              onClick={handleSync}
+              onClick={() => handleSync()}
               disabled={isSyncing}
               className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-6 py-3.5 text-sm font-bold text-white hover:bg-zinc-800 transition-colors shadow-md disabled:bg-zinc-300 cursor-pointer"
             >
@@ -133,10 +152,13 @@ export default function SyncPage() {
         {/* Quick presets */}
         <div className="flex items-center gap-2 pt-1 flex-wrap">
           <span className="text-xs text-zinc-500 font-medium">Quick presets:</span>
-          {["X_illumiNati", "tourist", "Benq", "ecnerwala"].map((preset) => (
+          {["X_illUmiNatI", "Toufik", "tourist", "Benq", "Errichto", "ecnerwala"].map((preset) => (
             <button
               key={preset}
-              onClick={() => setHandle(preset)}
+              onClick={() => {
+                setHandle(preset);
+                handleSync(preset);
+              }}
               className="rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-200 transition-colors cursor-pointer"
             >
               {preset}
@@ -155,16 +177,24 @@ export default function SyncPage() {
       {/* Sync Status Live Panel with 4 Truth-In-Data Metrics */}
       {syncResult && (
         <div className="rounded-3xl border border-indigo-100 bg-linear-to-br from-white to-indigo-50/30 p-8 shadow-xs space-y-6">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 pb-5">
             <div>
               <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider block">
                 Truth-in-Data Sync Report ({handle})
               </span>
               <h3 className="text-xl font-bold text-zinc-900 mt-1">Incremental Pipeline Status</h3>
             </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
-              <CheckCircle2 className="h-4 w-4" /> Synchronized
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                <CheckCircle2 className="h-4 w-4" /> Synchronized
+              </span>
+              <Link
+                href={`/?handle=${encodeURIComponent(handle)}`}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-500 transition-colors shadow-sm"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> View Dashboard <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           </div>
 
           {/* 4 Crucial Separated Metrics */}
@@ -178,7 +208,7 @@ export default function SyncPage() {
                 {syncResult.currentSolved}
               </strong>
               <p className="text-[11px] text-zinc-500 mt-1">
-                Total unique accepted problems on Codeforces
+                Total unique accepted problems
               </p>
             </div>
 
@@ -187,11 +217,11 @@ export default function SyncPage() {
               <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider block">
                 2. Newly Discovered
               </span>
-              <strong className="text-2xl font-black text-indigo-700 mt-1 block">
-                {syncResult.newlyDiscovered}
+              <strong className="text-2xl font-black text-indigo-600 mt-1 block">
+                +{syncResult.newlyDiscovered}
               </strong>
               <p className="text-[11px] text-zinc-500 mt-1">
-                New unique problems found in this sync
+                New AC problems this run
               </p>
             </div>
 
@@ -200,11 +230,11 @@ export default function SyncPage() {
               <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider block">
                 3. Newly Analyzed
               </span>
-              <strong className="text-2xl font-black text-emerald-700 mt-1 block">
-                {syncResult.newlyAnalyzed}
+              <strong className="text-2xl font-black text-purple-600 mt-1 block">
+                +{syncResult.newlyAnalyzed}
               </strong>
               <p className="text-[11px] text-zinc-500 mt-1">
-                Processed into knowledge atoms this sync
+                Structured knowledge atoms created
               </p>
             </div>
 
@@ -213,7 +243,7 @@ export default function SyncPage() {
               <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider block">
                 4. Pending Analysis
               </span>
-              <strong className="text-2xl font-black text-amber-700 mt-1 block">
+              <strong className="text-2xl font-black text-amber-600 mt-1 block">
                 {syncResult.pendingAnalysis}
               </strong>
               <p className="text-[11px] text-zinc-500 mt-1">
@@ -251,5 +281,13 @@ export default function SyncPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SyncPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-sm text-zinc-500">Loading sync pipeline...</div>}>
+      <SyncPageContent />
+    </Suspense>
   );
 }

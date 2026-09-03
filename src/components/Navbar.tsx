@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Brain,
   Layers,
@@ -13,10 +13,12 @@ import {
   Share2,
   HelpCircle,
   ExternalLink,
+  Search,
 } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = [
     { name: "Universe", href: "/", icon: Brain },
@@ -29,6 +31,7 @@ export default function Navbar() {
     { name: "CF Sync", href: "/sync", icon: RefreshCw },
   ];
 
+  const [searchHandle, setSearchHandle] = useState("");
   const [activeUser, setActiveUser] = useState<{ handle: string; rating: number; rank: string } | null>(null);
   const [availableUsers, setAvailableUsers] = useState<{ handle: string; rating: number; rank: string }[]>([]);
 
@@ -45,6 +48,14 @@ export default function Navbar() {
       })
       .catch(() => {});
   }, [pathname]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = searchHandle.trim();
+    if (!clean) return;
+    router.push(`/sync?handle=${encodeURIComponent(clean)}&auto=1`);
+    setSearchHandle("");
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur shadow-xs">
@@ -86,8 +97,19 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* User Handle & Sync Indicator */}
-        <div className="flex items-center gap-3">
+        {/* Handle Search Bar & User Switcher */}
+        <div className="flex items-center gap-2.5">
+          <form onSubmit={handleSearchSubmit} className="relative hidden md:block">
+            <input
+              type="text"
+              value={searchHandle}
+              onChange={(e) => setSearchHandle(e.target.value)}
+              placeholder="Search any CF handle..."
+              className="w-40 xl:w-48 rounded-full border border-zinc-200 bg-zinc-50/80 pl-8 pr-3 py-1.5 text-xs font-semibold text-zinc-800 placeholder:text-zinc-400 focus:bg-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
+            />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+          </form>
+
           {availableUsers.length > 1 ? (
             <div className="relative">
               <select

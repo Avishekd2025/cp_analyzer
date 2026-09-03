@@ -147,6 +147,25 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               Explore Knowledge Graph <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
+
+          {/* Direct Search Any Handle Form */}
+          <div className="pt-3">
+            <form action="/sync" method="GET" className="flex items-center gap-2 max-w-md">
+              <input
+                type="text"
+                name="handle"
+                placeholder="Analyze any CF handle (e.g. tourist, Benq, Toufik)..."
+                className="flex-1 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white placeholder:text-zinc-400 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              <input type="hidden" name="auto" value="1" />
+              <button
+                type="submit"
+                className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-100 transition-colors shadow-sm cursor-pointer"
+              >
+                Search & Sync
+              </button>
+            </form>
+          </div>
         </div>
 
         <div className="absolute right-0 top-0 h-full w-1/3 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
