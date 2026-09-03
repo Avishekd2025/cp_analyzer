@@ -33,7 +33,6 @@ export default function Navbar() {
 
   const [searchHandle, setSearchHandle] = useState("");
   const [activeUser, setActiveUser] = useState<{ handle: string; rating: number; rank: string } | null>(null);
-  const [availableUsers, setAvailableUsers] = useState<{ handle: string; rating: number; rank: string }[]>([]);
 
   useEffect(() => {
     fetch("/api/user")
@@ -41,9 +40,6 @@ export default function Navbar() {
       .then((data) => {
         if (data && data.handle && data.handle !== "Not Connected") {
           setActiveUser(data);
-        }
-        if (data && Array.isArray(data.availableUsers)) {
-          setAvailableUsers(data.availableUsers);
         }
       })
       .catch(() => {});
@@ -97,69 +93,41 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Handle Search Bar & User Switcher */}
+        {/* Direct Handle Search & Active User */}
         <div className="flex items-center gap-2.5">
-          <form onSubmit={handleSearchSubmit} className="relative hidden md:block">
+          <form onSubmit={handleSearchSubmit} className="relative">
             <input
               type="text"
               value={searchHandle}
               onChange={(e) => setSearchHandle(e.target.value)}
-              placeholder="Search any CF handle..."
-              className="w-40 xl:w-48 rounded-full border border-zinc-200 bg-zinc-50/80 pl-8 pr-3 py-1.5 text-xs font-semibold text-zinc-800 placeholder:text-zinc-400 focus:bg-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
+              placeholder="Search CF handle..."
+              className="w-36 sm:w-48 lg:w-56 rounded-full border border-zinc-200 bg-zinc-50/90 pl-8 pr-3 py-1.5 text-xs font-semibold text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-2xs"
             />
             <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
           </form>
 
-          {availableUsers.length > 1 ? (
-            <div className="relative">
-              <select
-                value={activeUser?.handle || ""}
-                onChange={async (e) => {
-                  const newHandle = e.target.value;
-                  if (!newHandle) return;
-                  await fetch("/api/user", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ handle: newHandle }),
-                  });
-                  window.location.reload();
-                }}
-                className="appearance-none flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 pl-3 pr-8 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-100 transition-colors shadow-2xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                title="Switch active Codeforces handle"
-              >
-                {availableUsers.map((u) => (
-                  <option key={u.handle} value={u.handle}>
-                    {u.handle} ({u.rating || "unrated"})
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]">
-                ▼
-              </div>
-            </div>
-          ) : (
-            <Link
-              href="/sync"
-              className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 transition-colors shadow-2xs"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          <Link
+            href="/sync"
+            className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100 transition-colors shadow-2xs shrink-0"
+            title="Open Sync or Change Handle"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="font-semibold text-zinc-900">{activeUser ? activeUser.handle : "CF Sync"}</span>
+            {activeUser && (
+              <span className="rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-800">
+                {activeUser.rating}
               </span>
-              <span className="font-semibold text-zinc-900">{activeUser ? activeUser.handle : "CF Sync"}</span>
-              {activeUser && (
-                <span className="rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-800">
-                  {activeUser.rating} {activeUser.rank}
-                </span>
-              )}
-            </Link>
-          )}
+            )}
+          </Link>
 
           <a
             href="https://codeforces.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-indigo-600 transition-colors"
+            className="hidden xl:inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-indigo-600 transition-colors"
           >
             Codeforces <ExternalLink className="h-3 w-3" />
           </a>

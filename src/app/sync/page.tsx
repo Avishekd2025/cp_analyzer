@@ -148,23 +148,6 @@ function SyncPageContent() {
             </button>
           </div>
         </div>
-
-        {/* Quick presets */}
-        <div className="flex items-center gap-2 pt-1 flex-wrap">
-          <span className="text-xs text-zinc-500 font-medium">Quick presets:</span>
-          {["X_illUmiNatI", "Toufik", "tourist", "Benq", "Errichto", "ecnerwala"].map((preset) => (
-            <button
-              key={preset}
-              onClick={() => {
-                setHandle(preset);
-                handleSync(preset);
-              }}
-              className="rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-200 transition-colors cursor-pointer"
-            >
-              {preset}
-            </button>
-          ))}
-        </div>
       </div>
 
       {errorMsg && (

@@ -17,18 +17,6 @@ export async function GET(req: NextRequest) {
       where: eq(users.codeforcesHandle, targetHandle),
     });
 
-    // Fetch all available accounts in DB
-    const allUsers = await db
-      .select({
-        handle: users.codeforcesHandle,
-        name: users.name,
-        rating: users.rating,
-        rank: users.rank,
-        totalSolved: users.totalSolved,
-      })
-      .from(users)
-      .orderBy(desc(users.totalSolved));
-
     if (!user) {
       return NextResponse.json({
         handle: targetHandle,
@@ -37,7 +25,6 @@ export async function GET(req: NextRequest) {
         rank: "unrated",
         totalSolved: 0,
         totalAnalyzed: 0,
-        availableUsers: allUsers,
       });
     }
 
@@ -49,11 +36,10 @@ export async function GET(req: NextRequest) {
       totalSolved: user.totalSolved || 0,
       totalAnalyzed: user.totalAnalyzed || 0,
       lastSyncedAt: user.lastSyncedAt,
-      availableUsers: allUsers,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { handle: DEFAULT_HANDLE, rating: 0, rank: "unrated", availableUsers: [] },
+      { handle: DEFAULT_HANDLE, rating: 0, rank: "unrated" },
       { status: 200 }
     );
   }
