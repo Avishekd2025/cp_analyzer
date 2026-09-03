@@ -4,10 +4,19 @@ import postgres from "postgres";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString =
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.STORAGE_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_URL_NON_POOLING;
+
   if (!connectionString) {
     return NextResponse.json(
-      { success: false, error: "DATABASE_URL is not set" },
+      {
+        success: false,
+        error: "No database connection string found (DATABASE_URL, POSTGRES_URL, or STORAGE_URL)",
+      },
       { status: 500 }
     );
   }

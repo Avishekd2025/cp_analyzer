@@ -3,14 +3,22 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 const connectionString =
-  process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/cp_analyzer";
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.STORAGE_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  "postgresql://postgres:postgres@localhost:5432/cp_analyzer";
 
-if (!process.env.DATABASE_URL) {
-  if (process.env.NODE_ENV === "production") {
-    console.warn(
-      "[WARNING] DATABASE_URL is not set. Please add DATABASE_URL to your environment variables (e.g. in Vercel Project Settings)."
-    );
-  }
+if (
+  !process.env.DATABASE_URL &&
+  !process.env.POSTGRES_URL &&
+  !process.env.STORAGE_URL &&
+  process.env.NODE_ENV === "production"
+) {
+  console.warn(
+    "[WARNING] No PostgreSQL connection string found in environment variables (DATABASE_URL, POSTGRES_URL, STORAGE_URL)."
+  );
 }
 
 declare global {
